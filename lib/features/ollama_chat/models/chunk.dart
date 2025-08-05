@@ -1,7 +1,8 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'message.dart';
 
-part 'ollama_messages.freezed.dart';
-part 'ollama_messages.g.dart';
+part 'chunk.freezed.dart';
+part 'chunk.g.dart';
 
 @freezed
 abstract class Chunk with _$Chunk {
@@ -20,21 +21,4 @@ abstract class Chunk with _$Chunk {
   }) = _Chunk;
 
   factory Chunk.fromJson(Map<String, dynamic> json) => _$ChunkFromJson(json);
-}
-
-@freezed
-abstract class ChunksResponse with _$ChunksResponse {
-  const factory ChunksResponse({required List<Chunk> chunks}) = _ChunksResponse;
-
-  factory ChunksResponse.fromJson(Map<String, dynamic> json) =>
-      _$ChunksResponseFromJson(json);
-}
-
-@freezed
-abstract class Message with _$Message {
-  const factory Message({required String role, required String content}) =
-      _Message;
-
-  factory Message.fromJson(Map<String, dynamic> json) =>
-      _$MessageFromJson(json);
 }

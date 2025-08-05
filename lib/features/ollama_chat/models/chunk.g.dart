@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ollama_messages.dart';
+part of 'chunk.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
@@ -32,22 +32,4 @@ Map<String, dynamic> _$ChunkToJson(_Chunk instance) => <String, dynamic>{
   'prompt_eval_duration': instance.promptEvalDuration,
   'eval_count': instance.evalCount,
   'eval_duration': instance.evalDuration,
-};
-
-_ChunksResponse _$ChunksResponseFromJson(Map<String, dynamic> json) =>
-    _ChunksResponse(
-      chunks: (json['chunks'] as List<dynamic>)
-          .map((e) => Chunk.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-
-Map<String, dynamic> _$ChunksResponseToJson(_ChunksResponse instance) =>
-    <String, dynamic>{'chunks': instance.chunks};
-
-_Message _$MessageFromJson(Map<String, dynamic> json) =>
-    _Message(role: json['role'] as String, content: json['content'] as String);
-
-Map<String, dynamic> _$MessageToJson(_Message instance) => <String, dynamic>{
-  'role': instance.role,
-  'content': instance.content,
 };
