@@ -1,9 +1,10 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
+import '../bloc/chat_bloc.dart';
+import '../bloc/chat_event.dart';
+import '../bloc/chat_state.dart';
 import '../bloc/model_bloc.dart';
 import '../bloc/model_event.dart';
 import '../bloc/model_state.dart';
@@ -14,6 +15,75 @@ class ChatScreen extends StatefulWidget {
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
+}
+
+class MessagesView extends StatelessWidget {
+  final ScrollController controller = ScrollController();
+
+  MessagesView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+
+    return BlocConsumer<ChatBloc, ChatState>(
+      listener: (context, state) {
+        // if (state is ChatLoaded) {
+        //   // _scrollToBottom();
+        // }
+      },
+      builder: (context, state) {
+        if (state is ChatLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final chunks = state is ChatLoaded ? state.response : [];
+        // final message = state.response.map((c) => c.message.content).join();
+
+        if (state is ChatLoaded) {
+          return ListView(
+            controller: controller,
+            padding: const EdgeInsets.all(12),
+            children: [
+              if (chunks.isNotEmpty)
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: MarkdownBody(
+                    data: chunks.map((c) => c.message.content).join(),
+                    styleSheet: MarkdownStyleSheet.fromTheme(
+                      Theme.of(context),
+                    ).copyWith(p: const TextStyle(fontSize: 16)),
+                  ),
+                ),
+            ],
+          );
+        }
+
+        if (chunks.isEmpty) {
+          return const Center(child: Text('No messages yet.'));
+        }
+
+        return Container();
+      },
+    );
+  }
+
+  _scrollToBottom() {
+    controller.jumpTo(controller.position.maxScrollExtent);
+  }
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -31,7 +101,7 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                // Expanded(child: MessagesView(controller: ScrollController())),
+                Expanded(child: MessagesView()),
                 _PromtInput(),
               ],
             ),
@@ -137,81 +207,33 @@ class _PromtInputState extends State<_PromtInput> {
   }
 
   void _send() async {
-    // final text = _controller.text.trim();
-    // if (text.isEmpty) return;
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
 
-    // final modelState = context.read<ModelBloc>().state;
-    // if (modelState is! ModelLoaded || modelState.selectedModel == null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     const SnackBar(
-    //       content: Text('Please select a model first'),
-    //       backgroundColor: Colors.orange,
-    //     ),
-    //   );
-    //   return;
-    // }
+    final modelState = context.read<ModelBloc>().state;
 
-    // final model = modelState.selectedModel!;
+    if (modelState is! ModelLoaded || modelState.selectedModel == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a model first'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    // try {
-    //   await context.read<ModelBloc>().sendPrompt(text, model: model);
-    //   _controller.clear();
-    // } catch (error) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Error sending prompt: $error'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    // }
+    final model = modelState.selectedModel!;
+
+    try {
+      context.read<ChatBloc>().add(PromptSent(model.model, text));
+      _controller.clear();
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error sending prompt: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 }
-
-// class MessagesView extends StatelessWidget {
-//   final ScrollController controller;
-
-//   const MessagesView({super.key, required this.controller});
-
-//   _scrollToBottom() {
-//     controller.jumpTo(controller.position.maxScrollExtent);
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-//     return Consumer<OllamaProvider>(
-//       builder: (context, provider, _) {
-//         final message = provider.chunks.map((c) => c.message.content).join();
-
-//         return ListView(
-//           controller: controller,
-//           padding: const EdgeInsets.all(12),
-//           children: [
-//             if (message.isNotEmpty)
-//               Container(
-//                 decoration: BoxDecoration(
-//                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-//                   borderRadius: BorderRadius.circular(16),
-//                   boxShadow: [
-//                     BoxShadow(
-//                       color: Colors.black12,
-//                       blurRadius: 4,
-//                       offset: Offset(0, 2),
-//                     ),
-//                   ],
-//                 ),
-//                 padding: const EdgeInsets.all(16),
-//                 child: MarkdownBody(
-//                   data: message,
-//                   styleSheet: MarkdownStyleSheet.fromTheme(
-//                     Theme.of(context),
-//                   ).copyWith(p: const TextStyle(fontSize: 16)),
-//                 ),
-//               ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-// }

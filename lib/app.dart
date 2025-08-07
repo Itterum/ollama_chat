@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'features/ollama_chat/bloc/chat_bloc.dart';
 import 'features/ollama_chat/bloc/model_bloc.dart';
 import 'features/ollama_chat/bloc/model_event.dart';
 import 'features/ollama_chat/repository/ollama_repository.dart';
@@ -11,9 +12,17 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) =>
-          ModelBloc(repository: OllamaService())..add(const ModelsRequested()),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider<ModelBloc>(
+          create: (_) =>
+              ModelBloc(repository: OllamaService())
+                ..add(const ModelsRequested()),
+        ),
+        BlocProvider<ChatBloc>(
+          create: (_) => ChatBloc(repository: OllamaService()),
+        ),
+      ],
       child: MaterialApp(
         title: 'Ollama Chat',
         theme: ThemeData(
