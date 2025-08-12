@@ -3,7 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../models/tags/ollama_tags.dart';
+import '../models/llm.dart';
 
 class OllamaService {
   final client = http.Client();
@@ -11,7 +11,7 @@ class OllamaService {
 
   Uri getUri(String path) => Uri.parse('$baseUrl$path');
 
-  Future<TagsResponse> fetchModels() async {
+  Future<LlmList> fetchModels() async {
     final response = await client.get(
       getUri('/api/tags'),
       headers: {'Content-Type': 'application/json'},
@@ -21,7 +21,7 @@ class OllamaService {
       throw Exception('Failed to fetch models: ${response.statusCode}');
     }
 
-    return TagsResponse.fromJson(jsonDecode(response.body));
+    return LlmList.fromJson(jsonDecode(response.body));
   }
 
   Future<http.StreamedResponse> postPrompt(String model, String prompt) async {

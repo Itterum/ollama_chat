@@ -1,21 +1,31 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'ollama_tags.dart';
+part of 'llm.dart';
 
 // **************************************************************************
 // JsonSerializableGenerator
 // **************************************************************************
 
-_Tag _$TagFromJson(Map<String, dynamic> json) => _Tag(
+_LlmList _$LlmListFromJson(Map<String, dynamic> json) => _LlmList(
+  llms: (json['models'] as List<dynamic>)
+      .map((e) => Llm.fromJson(e as Map<String, dynamic>))
+      .toList(),
+);
+
+Map<String, dynamic> _$LlmListToJson(_LlmList instance) => <String, dynamic>{
+  'models': instance.llms,
+};
+
+_Llm _$LlmFromJson(Map<String, dynamic> json) => _Llm(
   name: json['name'] as String,
   model: json['model'] as String,
   modifiedAt: json['modified_at'] as String,
   size: (json['size'] as num).toInt(),
   digest: json['digest'] as String,
-  details: TagDetails.fromJson(json['details'] as Map<String, dynamic>),
+  details: LlmDetails.fromJson(json['details'] as Map<String, dynamic>),
 );
 
-Map<String, dynamic> _$TagToJson(_Tag instance) => <String, dynamic>{
+Map<String, dynamic> _$LlmToJson(_Llm instance) => <String, dynamic>{
   'name': instance.name,
   'model': instance.model,
   'modified_at': instance.modifiedAt,
@@ -24,7 +34,7 @@ Map<String, dynamic> _$TagToJson(_Tag instance) => <String, dynamic>{
   'details': instance.details,
 };
 
-_TagDetails _$TagDetailsFromJson(Map<String, dynamic> json) => _TagDetails(
+_LlmDetails _$LlmDetailsFromJson(Map<String, dynamic> json) => _LlmDetails(
   parentModel: json['parent_model'] as String,
   format: json['format'] as String,
   family: json['family'] as String,
@@ -35,7 +45,7 @@ _TagDetails _$TagDetailsFromJson(Map<String, dynamic> json) => _TagDetails(
   quantizationLevel: json['quantization_level'] as String,
 );
 
-Map<String, dynamic> _$TagDetailsToJson(_TagDetails instance) =>
+Map<String, dynamic> _$LlmDetailsToJson(_LlmDetails instance) =>
     <String, dynamic>{
       'parent_model': instance.parentModel,
       'format': instance.format,
@@ -44,13 +54,3 @@ Map<String, dynamic> _$TagDetailsToJson(_TagDetails instance) =>
       'parameter_size': instance.parameterSize,
       'quantization_level': instance.quantizationLevel,
     };
-
-_TagsResponse _$TagsResponseFromJson(Map<String, dynamic> json) =>
-    _TagsResponse(
-      models: (json['models'] as List<dynamic>)
-          .map((e) => Tag.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
-
-Map<String, dynamic> _$TagsResponseToJson(_TagsResponse instance) =>
-    <String, dynamic>{'models': instance.models};
