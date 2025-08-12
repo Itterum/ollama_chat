@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
 
 import '../bloc/chat_bloc.dart';
-import '../bloc/chat_event.dart';
 import '../bloc/chat_state.dart';
-import '../bloc/model_bloc.dart';
-import '../bloc/model_event.dart';
 import '../bloc/model_state.dart';
-import '../models/llm.dart';
+import '../widgets/input_widget.dart';
+import '../widgets/message_widget.dart';
+import '../widgets/loading_overlay.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -17,80 +15,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class MessagesView extends StatelessWidget {
-  final ScrollController controller = ScrollController();
-
-  MessagesView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
-
-    return BlocConsumer<ChatBloc, ChatState>(
-      listener: (context, state) {
-        // if (state is ChatLoaded) {
-        //   // _scrollToBottom();
-        // }
-      },
-      builder: (context, state) {
-        if (state is ChatLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final chunks = state is ChatLoaded ? state.response : [];
-        // final message = state.response.map((c) => c.message.content).join();
-
-        if (state is ChatLoaded) {
-          return ListView(
-            controller: controller,
-            padding: const EdgeInsets.all(12),
-            children: [
-              if (chunks.isNotEmpty)
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 4,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: MarkdownBody(
-                    data: chunks.map((c) => c.message.content).join(),
-                    styleSheet: MarkdownStyleSheet.fromTheme(
-                      Theme.of(context),
-                    ).copyWith(p: const TextStyle(fontSize: 16)),
-                  ),
-                ),
-            ],
-          );
-        }
-
-        if (chunks.isEmpty) {
-          return const Center(child: Text('No messages yet.'));
-        }
-
-        return Container();
-      },
-    );
-  }
-
-  _scrollToBottom() {
-    controller.jumpTo(controller.position.maxScrollExtent);
-  }
-}
-
 class _ChatScreenState extends State<ChatScreen> {
-  Llm? selectedModel;
-
-  final controller = ScrollController();
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,138 +27,17 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               children: [
                 Expanded(child: MessagesView()),
-                _PromtInput(),
+                PromtInput(),
               ],
             ),
           ),
-
-          if (context.read<ModelBloc>().state is ModelLoading)
-            const Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: LinearProgressIndicator(),
-            ),
+          BlocBuilder<ChatBloc, ChatState>(
+            builder: (_, state) => state is ModelLoading
+                ? LoadingOverlay()
+                : const SizedBox.shrink(),
+          ),
         ],
       ),
     );
-  }
-}
-
-class _PromtInput extends StatefulWidget {
-  const _PromtInput();
-
-  @override
-  State<_PromtInput> createState() => _PromtInputState();
-}
-
-class _PromtInputState extends State<_PromtInput> {
-  final _controller = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                onSubmitted: (_) => _send(),
-                decoration: const InputDecoration(
-                  hintText: 'Enter your prompt...',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-            ),
-            IconButton(icon: const Icon(Icons.send), onPressed: _send),
-            IconButton(
-              icon: const Icon(Icons.format_list_bulleted),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (context) {
-                    return BlocBuilder<ModelBloc, ModelState>(
-                      builder: (context, state) {
-                        if (state is ModelLoading) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-
-                        if (state is ModelLoaded) {
-                          return Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: state.models.llms.map((model) {
-                              return RadioListTile<Llm>(
-                                title: Text(model.name),
-                                value: model,
-                                groupValue: state.selectedModel,
-                                onChanged: (Llm? selected) {
-                                  if (selected != null) {
-                                    context.read<ModelBloc>().add(
-                                      ModelSelected(selected),
-                                    );
-                                    Navigator.pop(context);
-                                  }
-                                },
-                              );
-                            }).toList(),
-                          );
-                        }
-
-                        if (state is ModelError) {
-                          print(state.message);
-                          return Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              "Error loading models: ${state.message}",
-                            ),
-                          );
-                        }
-
-                        return const SizedBox.shrink();
-                      },
-                    );
-                  },
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _send() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-
-    final modelState = context.read<ModelBloc>().state;
-
-    if (modelState is! ModelLoaded || modelState.selectedModel == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a model first'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    final model = modelState.selectedModel!;
-
-    try {
-      context.read<ChatBloc>().add(PromptSent(model.model, text));
-      _controller.clear();
-    } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error sending prompt: $error'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 }
